@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, customers, health, kpis, leads
+from app.api.routes import ai, auth, customers, health, kpis, lab, leads
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import setup_logging
@@ -47,6 +47,8 @@ def create_app() -> FastAPI:
     app.include_router(customers.router, prefix=settings.api_v1_prefix)
     app.include_router(leads.router, prefix=settings.api_v1_prefix)
     app.include_router(kpis.router, prefix=settings.api_v1_prefix)
+    app.include_router(lab.router, prefix=settings.api_v1_prefix)
+    app.include_router(ai.router, prefix=settings.api_v1_prefix)
 
     return app
 
