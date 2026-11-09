@@ -41,8 +41,8 @@ class CustomerRepository:
         city: str | None = None,
         status: str | None = None,
         q: str | None = None,
-    ) -> Select[tuple[Customer]]:
-        stmt = select(Customer)
+    ) -> Select[Any]:
+        stmt: Select[Any] = select(Customer)
         if city:
             stmt = stmt.where(Customer.city == city.strip())
         if status:
@@ -106,14 +106,14 @@ class CustomerRepository:
             .limit(limit)
         )
         rows_res = await self.db.execute(data_stmt)
-        customers = list(rows_res.scalars().all())
+        customers: list[Customer] = list(rows_res.scalars().all())
         return customers, total
 
     async def stream_filtered_customers(
         self,
         *,
         sort_by: str = "created_at",
-        order: str = "desc",
+        order: str | None = "desc",
         city: str | None = None,
         status: str | None = None,
         q: str | None = None,
@@ -126,5 +126,6 @@ class CustomerRepository:
         )
         stream = await self.db.stream_scalars(stmt.execution_options(yield_per=500))
         async for customer in stream:
-            yield customer
+            cust: Customer = customer
+            yield cust
 
