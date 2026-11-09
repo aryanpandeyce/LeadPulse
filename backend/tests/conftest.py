@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db_session
+from app.core.redis import close_redis, get_redis
 from app.main import app
 from app.scripts.seed import seed_database
 
@@ -14,6 +15,13 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest.fixture()
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    await close_redis()
+    redis = await get_redis()
+    for pattern in ("llm:*", "kpis:*", "rl:*"):
+        keys = await redis.keys(pattern)
+        if keys:
+            await redis.delete(*keys)
+
     engine = create_async_engine(TEST_DB_URL, future=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

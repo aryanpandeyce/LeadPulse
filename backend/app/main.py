@@ -1,16 +1,57 @@
 """FastAPI application entrypoint."""
 
+import asyncio
+import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import ai, auth, customers, health, kpis, lab, leads
 from app.core.config import get_settings
+from app.core.database import AsyncSessionLocal
 from app.core.errors import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import RequestContextMiddleware
+from app.core.redis import close_redis
+from app.repositories.kpi_repository import KpiRepository
 
 settings = get_settings()
 setup_logging(debug=settings.debug)
+logger = logging.getLogger(__name__)
+
+
+async def _periodic_kpi_refresh_loop(interval_seconds: int = 900) -> None:
+    """# CONCEPT: Caching an expensive aggregate (15-min background Materialized View refresh)"""
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            async with AsyncSessionLocal() as session:
+                repo = KpiRepository(session)
+                await repo.refresh_materialized_view_concurrently()
+            logger.info("Scheduled 15-min REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_kpis succeeded")
+        except Exception as exc:
+            logger.warning("Scheduled monthly_kpis refresh skipped: %s", exc)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
+    logger.info(
+        "LeadPulse API starting | env=%s | db_host=%s | redis_host=%s | demo_ai_mode=%s",
+        settings.environment,
+        settings.sanitized_db_host,
+        settings.sanitized_redis_host,
+        settings.is_demo_ai_mode,
+    )
+    refresh_task = asyncio.create_task(_periodic_kpi_refresh_loop(900))
+    try:
+        yield
+    finally:
+        refresh_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await refresh_task
+        await close_redis()
 
 
 def create_app() -> FastAPI:
@@ -25,6 +66,7 @@ def create_app() -> FastAPI:
         ),
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,
     )
 
     # Middleware
@@ -54,4 +96,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

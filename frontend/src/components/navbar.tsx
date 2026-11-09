@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { subscribeColdStart } from "@/lib/api-client";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview" },
@@ -19,9 +20,22 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const [wakingUp, setWakingUp] = useState(false);
+
+  useEffect(() => {
+    return subscribeColdStart(setWakingUp);
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+      {wakingUp && (
+        <div
+          role="status"
+          className="border-b border-amber-500/30 bg-amber-500/15 px-4 py-1.5 text-center text-xs font-medium text-amber-200"
+        >
+          Waking up the server (free tier cold start, ~30s)...
+        </div>
+      )}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <Link

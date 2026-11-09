@@ -27,9 +27,12 @@ _jobs_store: dict[str, CpuHeavyJobStatusResponse] = {}
 
 
 def _get_process_pool() -> ProcessPoolExecutor:
+    from app.core.config import get_settings
+
     global _process_pool
     if _process_pool is None:
-        _process_pool = ProcessPoolExecutor(max_workers=2)
+        workers = max(1, get_settings().process_pool_max_workers)
+        _process_pool = ProcessPoolExecutor(max_workers=workers)
     return _process_pool
 
 

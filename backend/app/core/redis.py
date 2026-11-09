@@ -86,23 +86,40 @@ class InMemoryRedisFallback:
 
 
 _redis_client: Any = None
+_redis_loop: Any = None
 _fallback_client = InMemoryRedisFallback()
+
+
+async def close_redis() -> None:
+    """Close cached Redis client (used on shutdown and between test event loops)."""
+    global _redis_client, _redis_loop
+    if _redis_client is not None:
+        try:
+            await _redis_client.aclose()
+        except Exception:
+            pass
+        _redis_client = None
+        _redis_loop = None
 
 
 async def get_redis() -> Any:
     """Return an active async Redis client, or fallback in-memory store if unavailable."""
-    global _redis_client
-    if _redis_client is not None:
+    import asyncio
+
+    global _redis_client, _redis_loop
+    current_loop = asyncio.get_running_loop()
+    if _redis_client is not None and _redis_loop is current_loop:
         return _redis_client
     try:
-        client = aioredis.from_url(
+        client: Any = aioredis.from_url(  # type: ignore[no-untyped-call]
             settings.redis_url,
             encoding="utf-8",
             decode_responses=True,
-            socket_connect_timeout=1.5,
+            socket_connect_timeout=1.0,
         )
-        await client.ping()
+        await asyncio.wait_for(client.ping(), timeout=0.8)
         _redis_client = client
+        _redis_loop = current_loop
         return _redis_client
     except Exception:
         return _fallback_client

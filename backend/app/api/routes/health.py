@@ -23,11 +23,16 @@ router = APIRouter(tags=["Observability & Health"])
 
 
 @router.get("/health", summary="Liveness probe")
-async def health_check() -> dict[str, str]:
+async def health_check() -> dict[str, Any]:
     """Fast liveness check used by container orchestrators and load balancers."""
+    from app.core.config import get_settings
+
+    cfg = get_settings()
     return {
         "status": "ok",
         "service": "leadpulse-backend",
+        "environment": cfg.environment,
+        "demo_ai_mode": cfg.is_demo_ai_mode,
         "request_id": get_request_id(),
     }
 

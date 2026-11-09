@@ -123,11 +123,14 @@ async def seed_database(
         await session.commit()
 
     # 1. Seed Users (admin + agent)
+    from app.core.config import get_settings
+
+    settings = get_settings()
     now = datetime.now(timezone.utc)
     admin_user = User(
         email="admin@leadpulse.io",
         full_name="Aryan Pandey (Admin)",
-        hashed_password=hash_password("Admin@123"),
+        hashed_password=hash_password(settings.seed_admin_password),
         role="admin",
         is_active=True,
         created_at=now,
@@ -135,7 +138,7 @@ async def seed_database(
     agent_user = User(
         email="agent@leadpulse.io",
         full_name="Priya Sharma (Sales Agent)",
-        hashed_password=hash_password("Agent@123"),
+        hashed_password=hash_password(settings.seed_agent_password),
         role="agent",
         is_active=True,
         created_at=now,
@@ -364,36 +367,52 @@ async def seed_database(
 
 
 async def main() -> None:
+    from app.core.config import get_settings
+
+    settings = get_settings()
     parser = argparse.ArgumentParser(description="Seed LeadPulse database with realistic CRM data.")
-    parser.add_argument("--customers", type=int, default=10_000, help="Number of customers (default: 10,000)")
+    parser.add_argument(
+        "--seed-size",
+        choices=["small", "full"],
+        default=settings.seed_size,
+        help="Preset dataset size: 'small' (10k customers, 30k leads, 60k activities for cloud free tier) or 'full' (10k customers, 200k leads, 500k activities)",
+    )
+    parser.add_argument("--customers", type=int, default=None, help="Number of customers (default: 10,000)")
     parser.add_argument(
         "--leads",
         type=int,
-        default=200_000,
-        help="Number of leads (default: 200,000; supports up to 1,000,000)",
+        default=None,
+        help="Number of leads (default: 200,000 for full or 30,000 for small; supports up to 1,000,000)",
     )
     parser.add_argument(
         "--activities",
         type=int,
-        default=500_000,
-        help="Number of lead activities (default: 500,000)",
+        default=None,
+        help="Number of lead activities (default: 500,000 for full or 60,000 for small)",
     )
     args = parser.parse_args()
 
-    if args.leads > 1_000_000:
+    is_small = args.seed_size == "small"
+    customers_count = args.customers if args.customers is not None else 10_000
+    leads_count = args.leads if args.leads is not None else (30_000 if is_small else 200_000)
+    activities_count = (
+        args.activities if args.activities is not None else (60_000 if is_small else 500_000)
+    )
+
+    if leads_count > 1_000_000:
         raise ValueError("--leads cannot exceed 1,000,000")
 
     print(
-        f"[LeadPulse Seed] Starting bulk seed: {args.customers:,} customers, "
-        f"{args.leads:,} leads, {args.activities:,} activities..."
+        f"[LeadPulse Seed] Starting bulk seed (mode={args.seed_size}): {customers_count:,} customers, "
+        f"{leads_count:,} leads, {activities_count:,} activities..."
     )
     await ensure_tables_exist()
     async with AsyncSessionLocal() as session:
         summary = await seed_database(
             session,
-            num_customers=args.customers,
-            num_leads=args.leads,
-            num_activities=args.activities,
+            num_customers=customers_count,
+            num_leads=leads_count,
+            num_activities=activities_count,
         )
     print(f"[LeadPulse Seed] Completed in {summary['elapsed_seconds']}s -> {summary}")
 
