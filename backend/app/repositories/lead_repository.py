@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, literal, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -75,7 +75,8 @@ class LeadRepository:
             cursor_dt, cursor_id = decode_keyset_cursor(cursor)
             # Row-value comparison: uses composite index (created_at DESC, id DESC) directly
             stmt = stmt.where(
-                tuple_(Lead.created_at, Lead.id) < tuple_(cursor_dt, cursor_id)
+                tuple_(Lead.created_at, Lead.id)
+                < tuple_(literal(cursor_dt), literal(cursor_id))
             )
 
         stmt = stmt.order_by(Lead.created_at.desc(), Lead.id.desc()).limit(limit + 1)
