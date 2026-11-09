@@ -1,10 +1,10 @@
 """Business logic service for Customer directory & CSV streaming export."""
 
-from collections.abc import AsyncIterator
 import csv
 import io
 import math
 import time
+from collections.abc import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

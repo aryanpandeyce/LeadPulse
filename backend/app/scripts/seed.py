@@ -13,10 +13,10 @@ Uses batched bulk inserts (`insert(Model)` in chunks of 5,000-10,000 rows) for s
 
 import argparse
 import asyncio
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 import random
 import time
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Any
 
 from faker import Faker

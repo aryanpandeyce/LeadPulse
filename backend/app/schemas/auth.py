@@ -1,6 +1,7 @@
 """Pydantic v2 schemas for authentication and user profiles."""
 
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
