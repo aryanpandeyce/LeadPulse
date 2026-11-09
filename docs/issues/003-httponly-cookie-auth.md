@@ -11,3 +11,4 @@ To support zero-cost cross-domain hosting between `vercel.app` and `onrender.com
 1. Configure custom subdomain routing (`app.leadpulse.io` and `api.leadpulse.io`).
 2. Issue `access_token` and `refresh_token` via `Set-Cookie` with `HttpOnly; Secure; SameSite=Lax`.
 3. Add CSRF token validation on state-mutating (`POST`/`PUT`/`DELETE`) endpoints.
+

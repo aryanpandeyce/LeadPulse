@@ -45,3 +45,4 @@ async def test_customers_pagination_sorting_filtering_and_search(
         lines = csv_resp.text.strip().splitlines()
         assert lines[0].startswith("id,name,email,phone,city,status")
         assert len(lines) >= 2
+

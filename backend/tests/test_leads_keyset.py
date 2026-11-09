@@ -71,3 +71,4 @@ async def test_pagination_benchmark_endpoint(db_session: AsyncSession) -> None:
         data = resp.json()
         assert data["total_leads_in_db"] >= 300
         assert len(data["results"]) == 4
+

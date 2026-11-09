@@ -101,3 +101,4 @@ def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> floa
         # Strong model (~10x more expensive than cheap model)
         cost = (input_tokens * 0.0000150) + (output_tokens * 0.0000600)
     return round(cost, 6)
+

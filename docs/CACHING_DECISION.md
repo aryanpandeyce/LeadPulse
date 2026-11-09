@@ -44,3 +44,4 @@ flowchart LR
 | **DB CPU on Cache Miss** | High (full scan) | **Very Low** (already pre-aggregated) | High if backed by raw SQL | **Very Low** (MV shields DB on Redis miss) |
 | **Operational Complexity** | None | Low (lives inside Postgres, SQL joins possible) | Medium (separate Redis service, serialization) | Medium (best resilience for high-traffic dashboards) |
 | **When to Choose** | Small tables (<10k rows) or strict real-time accounting | Complex multi-table SQL joins/reports where 5–15 min staleness is fine | High-QPS API responses, per-user caches, rate limits | **High-traffic analytics dashboards over large tables** |
+

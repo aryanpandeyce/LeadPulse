@@ -80,3 +80,4 @@ class PaginationBenchmarkResponse(BaseModel):
     total_leads_in_db: int
     limit_per_page: int
     results: list[PaginationBenchmarkPoint]
+

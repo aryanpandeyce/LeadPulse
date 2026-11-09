@@ -16,3 +16,4 @@ LeadPulse implements **10 layered cost-control mechanisms** in `backend/app/llm/
 | **8** | **Per-User Daily Spend Budgets** | `enforce_daily_budget()` sums the user's rolling 24h `cost_usd` and blocks calls once `LLM_DAILY_USER_BUDGET_USD` (`$1.00/day`) is reached. | Guarantees a hard upper bound on daily financial exposure per seat. |
 | **9** | **Admin FinOps Dashboard (`/admin/ai-costs`)** | Visualizes daily spend, cache hit rate %, cost by feature/model, and total dollars saved (`$0.4420` saved across 120 seeded calls, a **75.9% cost reduction** vs uncached `gpt-4o`). | Gives engineering & finance real-time visibility. |
 | **10** | **SSE Response Streaming** | `POST /api/v1/ai/chat/stream` streams tokens progressively via `text/event-stream` (controlled by `FEATURE_AI_STREAMING`). | Reduces perceived Time-To-First-Token (TTFT) while keeping `max_tokens` bounded. |
+

@@ -38,3 +38,4 @@ async def refresh_tokens(
 async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
     """Return the authenticated user's profile and role (`admin` or `agent`)."""
     return UserRead.model_validate(current_user)
+

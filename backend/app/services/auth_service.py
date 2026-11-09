@@ -70,3 +70,4 @@ class AuthService:
             expires_in_seconds=settings.access_token_expire_minutes * 60,
             user=UserRead.model_validate(user),
         )
+

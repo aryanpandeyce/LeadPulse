@@ -19,3 +19,4 @@ Enforce a 10-lever defense-in-depth pipeline in `AIService`:
 ## Consequences
 - **Positive**: Reduces total LLM spend by **~75.9%** in our seeded workload while giving admins real-time visibility on `/admin/ai-costs`.
 - **Negative / Trade-off**: Rule-based routing is a heuristic; borderline prompts could occasionally be routed to the cheap model when a stronger model would give a slightly more nuanced answer.
+

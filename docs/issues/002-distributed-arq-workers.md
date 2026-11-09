@@ -10,3 +10,4 @@
 ## Acceptance Criteria
 1. Persist job metadata (`job:{id}`) in Redis with a 24-hour TTL so any FastAPI replica can serve `GET /api/v1/lab/jobs/{id}`.
 2. Move `_cpu_bound_report_worker` and the 15-minute `REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_kpis` cron job into a dedicated `arq` worker service in `docker-compose.yml`.
+

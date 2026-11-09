@@ -15,3 +15,4 @@ Implement a **two-layer caching architecture**:
 ## Consequences
 - **Positive**: Dashboard reads drop from ~85 ms (raw SQL) to ~2.1 ms (Materialized View) and **~0.4 ms** (Redis hit). Even when the Redis TTL expires, PostgreSQL only reads ~60 pre-aggregated rows from `monthly_kpis` instead of scanning 200,000 rows.
 - **Negative / Trade-off**: Introduces bounded eventual consistency (up to 5 minutes for Redis TTL or 15 minutes between scheduled MV refreshes unless an admin triggers an explicit refresh).
+

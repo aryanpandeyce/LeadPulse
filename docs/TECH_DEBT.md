@@ -41,3 +41,4 @@ Senior engineers take **deliberate, bounded shortcuts** to validate product valu
 - **Impact / Risk**: `localStorage` is readable by JavaScript if an XSS vulnerability were ever introduced.
 - **Effort to Fix**: **S (4 hours)** — put both apps behind a custom domain (`app.leadpulse.io` + `api.leadpulse.io`) and switch to `HttpOnly; Secure; SameSite=Lax` cookies (`docs/issues/003-httponly-cookie-auth.md`).
 - **When to Fix**: Immediately upon binding a custom production domain.
+

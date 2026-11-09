@@ -45,3 +45,4 @@ async def test_auth_login_refresh_and_me(db_session: AsyncSession) -> None:
         )
         assert refresh_resp.status_code == 200
         assert "access_token" in refresh_resp.json()
+

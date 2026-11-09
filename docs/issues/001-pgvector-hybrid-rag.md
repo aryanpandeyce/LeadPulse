@@ -11,3 +11,4 @@ Currently, `AIService.retrieve_rag_chunks()` retrieves the top-3 relevant chunks
 1. Enable `CREATE EXTENSION IF NOT EXISTS vector;` in an Alembic migration.
 2. Add `embedding vector(1536)` and a `GIN (to_tsvector('english', content))` index to `knowledge_base_docs`.
 3. Implement Reciprocal Rank Fusion (RRF) combining top-5 cosine similarity matches + top-5 full-text matches into the final top-3 chunks passed to the LLM.
+

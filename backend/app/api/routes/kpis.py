@@ -56,3 +56,4 @@ async def refresh_kpis_admin(
     """Requires `admin` role (`admin@leadpulse.io`). Refreshes MV concurrently and bumps Redis key version."""
     service = KpiService(db)
     return await service.refresh_kpis_and_invalidate_cache()
+

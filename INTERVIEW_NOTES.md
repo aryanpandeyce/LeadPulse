@@ -360,3 +360,4 @@ If another engineer joins your team tomorrow, can they understand the architectu
 > **Third, on the AI side:** I built **Smart Lead Capture** (`/smart-capture`), which extracts structured lead fields from messy WhatsApp/email text using a Pydantic v2 schema passed to LLM tool-calling, defensive fence stripping, and a 2-retry validation feedback loop. And for our **AI Assistant** (`/ai-assistant` & `/admin/ai-costs`), I implemented 10 production cost levers—including zero-LLM FAQ short-circuiting, cheap-vs-strong model routing, normalized Redis prompt caching, RAG-lite top-3 chunk retrieval, Redis rate limiting, and a $1/day per-user spend cap—reducing LLM spend by **76%**.
 >
 > **Everything is strictly typed (`mypy` + TypeScript), wrapped in a unified error envelope with `X-Request-ID` correlation, documented with ADRs and a tech debt register, and verified in GitHub Actions CI."**
+

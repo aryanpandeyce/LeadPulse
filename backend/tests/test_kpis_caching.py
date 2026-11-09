@@ -55,3 +55,4 @@ async def test_kpi_caching_layers_and_admin_refresh(db_session: AsyncSession) ->
         )
         assert refresh_resp.status_code == 200
         assert refresh_resp.json()["new_cache_version"] >= 2
+

@@ -137,3 +137,4 @@ class AiCostDashboardResponse(BaseModel):
     cost_by_user: list[UserCostItem]
     cost_by_model: list[ModelCostItem]
     recent_logs: list[dict[str, str | int | float | bool | datetime | None]]
+

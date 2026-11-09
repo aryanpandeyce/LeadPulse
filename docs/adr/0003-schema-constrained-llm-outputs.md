@@ -16,3 +16,4 @@
 ## Consequences
 - **Positive**: Guarantees 100% schema-valid objects reach the database or UI form, with full observability of retry counts and reasons in structured logs.
 - **Negative / Trade-off**: Failed validations incur up to 2 additional LLM calls (bounded by `FEATURE_SMART_CAPTURE_RETRY` and per-user rate/budget limits).
+

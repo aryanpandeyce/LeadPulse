@@ -16,3 +16,4 @@ LeadPulse manages two primary collections with very different access patterns an
 ## Consequences
 - **Positive**: Deep pagination on 200k+ leads runs in constant $O(1)$ time (~0.88 ms at page 4,000 vs ~94.7 ms with `OFFSET 199950`, a **107x speedup**). Real-time lead insertions never cause duplicate or skipped items in the infinite scroll feed.
 - **Negative / Trade-off**: Keyset cursors cannot jump directly to an arbitrary page number without an intermediate index lookup, and require a unique tiebreaker column (`id DESC`) alongside `created_at DESC`.
+

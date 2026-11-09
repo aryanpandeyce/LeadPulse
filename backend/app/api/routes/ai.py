@@ -99,3 +99,4 @@ async def get_ai_cost_analytics(
     """Returns real-time aggregation of `llm_usage` rows for `/admin/ai-costs`."""
     service = AIService(db)
     return await service.get_cost_analytics_dashboard()
+

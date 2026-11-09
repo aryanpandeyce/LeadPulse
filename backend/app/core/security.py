@@ -155,3 +155,4 @@ async def require_admin(user: User = Depends(get_current_user)) -> User:
             message="Administrator privileges are required for this endpoint.",
         )
     return user
+

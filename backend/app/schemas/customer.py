@@ -42,3 +42,4 @@ class PaginatedCustomersResponse(BaseModel):
     limit: int = Field(ge=1, le=100)
     total_pages: int = Field(ge=0)
     query_ms: float = Field(description="Server-side DB execution time in milliseconds")
+

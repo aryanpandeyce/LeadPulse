@@ -30,3 +30,4 @@ Regardless of shipping speed, the following guardrails were **never** compromise
 - [ ] **Semantic Vector Hybrid Search (`pgvector`)**: Combine `pg_trgm` keyword match with dense embedding cosine similarity (`docs/issues/001-pgvector-hybrid-rag.md`).
 - [ ] **Distributed Celery / ARQ Worker Queue**: Move `ProcessPoolExecutor` in-memory job tracking to Redis-backed ARQ workers for multi-replica horizontal scaling (`docs/issues/002-distributed-arq-workers.md`).
 - [ ] **HttpOnly Cookie Auth + CSRF Double-Submit**: Migrate browser JWT storage from `localStorage` to `HttpOnly; Secure; SameSite=Lax` cookies (`docs/issues/003-httponly-cookie-auth.md`).
+

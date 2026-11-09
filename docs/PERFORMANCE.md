@@ -26,3 +26,4 @@ LeadPulse uses `next/image` across the entire application:
 - **Preventing CLS (`Cumulative Layout Shift`)**: Every `<Image>` either sets explicit `width` and `height` props or uses `fill` inside a parent with a fixed height/aspect ratio (`aspect-[4/3]` or `h-64`).
 - **`priority` vs Lazy Loading**: Only above-the-fold hero/first-row images set `priority`; all below-the-fold images lazy-load automatically.
 - **Dynamic Imports for Heavy Client Bundles**: Heavy Recharts visualizations on `/dashboard` and `/admin/ai-costs` are isolated into client chart components so Server Components stay lightweight.
+

@@ -74,3 +74,4 @@ LeadPulse is designed to deploy cleanly onto 100% free-tier cloud infrastructure
 ## 3. Cross-Domain CORS & Auth Notes
 - When hosting the frontend on `*.vercel.app` and the backend on `*.onrender.com`, browsers treat them as cross-site origins.
 - Our FastAPI `CORSMiddleware` (`backend/app/main.py`) explicitly sets `allow_origins=settings.cors_origins`, `allow_headers=["*"]`, and `expose_headers=["X-Request-ID", "X-Response-Time-Ms", "Retry-After"]` so the typed frontend client (`frontend/src/lib/api-client.ts`) can read correlation IDs and `429 Retry-After` timers across domains.
+

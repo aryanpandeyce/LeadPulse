@@ -127,3 +127,4 @@ class CustomerRepository:
         stream = await self.db.stream_scalars(stmt.execution_options(yield_per=500))
         async for customer in stream:
             yield customer
+

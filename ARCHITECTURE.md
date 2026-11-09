@@ -72,3 +72,4 @@ sequenceDiagram
     Handler-->>UI: HTTP 400 { error: { code, message, status, request_id, details } } + Header X-Request-ID
     UI->>UI: ApiClientError parsed -> Toast displays message + request_id
 ```
+

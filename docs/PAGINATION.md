@@ -55,3 +55,4 @@ Because Keyset pagination anchors directly to the last seen row `WHERE (created_
 ## 4. Why Keyset Cannot Jump Directly to "Page N"
 
 Keyset pagination relies on knowing the `(created_at, id)` boundary values of the last item on Page $N - 1$. Without scanning or maintaining an external rank index, the database does not know which `(created_at, id)` tuple sits at position `(N - 1) * limit`, so arbitrary "Jump to Page 47" buttons are not supported natively.
+
