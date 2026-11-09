@@ -54,15 +54,15 @@ Every concept is marked with `# CONCEPT: ...` in code and has a dedicated intera
 | # | Engineering Concept | Where in Code | Where in UI / API | Real Measured Metric |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | **Next.js `<Image>` vs `<img>`** | [`frontend/next.config.js`](./frontend/next.config.js), [`frontend/src/app/docs/image-demo/page.tsx`](./frontend/src/app/docs/image-demo/page.tsx), [`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) | `/docs/image-demo`, `/`, `/customers` | **91.7% smaller payload** (`742 KB` vs `8.92 MB` for 100 images), **CLS = `0.000`** |
-| **2** | **10,000 Customers Server-Side Table** | [`customer_repository.py`](./backend/app/repositories/customer_repository.py), [`customers/page.tsx`](./frontend/src/app/customers/page.tsx), [`docs/DB_INDEXES.md`](./docs/DB_INDEXES.md) | `/customers`, `GET /api/v1/customers`, `GET /api/v1/customers/export.csv` | **`0.65 ms`** `pg_trgm` GIN + composite index scan vs `18.49 ms` Seq Scan (**28x faster**) |
-| **3** | **`async/await` in FastAPI Concurrency Lab** | [`lab_service.py`](./backend/app/services/lab_service.py), [`benchmark_async.py`](./backend/app/scripts/benchmark_async.py), [`docs/ASYNC_NOTES.md`](./docs/ASYNC_NOTES.md) | `/lab`, `GET /api/v1/lab/io-async`, `POST /api/v1/lab/cpu-heavy` | 50 concurrent reqs: **`56.4 ms` (`885 req/s`)** async gather vs **`2,268 ms` (`22 req/s`)** blocking inside `async def` |
+| **2** | **10,000 Customers Server-Side Table** | [`customer_repository.py`](./backend/app/repositories/customer_repository.py), [`customers/page.tsx`](./frontend/src/app/customers/page.tsx), [`docs/DB_INDEXES.md`](./docs/DB_INDEXES.md) | `/customers`, `GET /api/v1/customers`, `GET /api/v1/customers/export.csv` | **`1.01 ms`** `pg_trgm` GIN Bitmap Index Scan (8 buffers) vs `8.66 ms` Seq Scan (285 buffers) |
+| **3** | **`async/await` in FastAPI Concurrency Lab** | [`lab_service.py`](./backend/app/services/lab_service.py), [`benchmark_async.py`](./backend/app/scripts/benchmark_async.py), [`docs/ASYNC_NOTES.md`](./docs/ASYNC_NOTES.md) | `/lab`, `GET /api/v1/lab/io-async`, `POST /api/v1/lab/cpu-heavy` | 50 concurrent reqs: **`193.7 ms`** async gather vs **`3,179.7 ms`** blocking inside `async def` (**16.4x faster**) |
 | **4** | **Unified Error Envelope & Request-ID** | [`errors.py`](./backend/app/core/errors.py), [`middleware.py`](./backend/app/core/middleware.py), [`logging.py`](./backend/app/core/logging.py), [`api-client.ts`](./frontend/src/lib/api-client.ts) | `/` (Error Tester), `GET /api/v1/error-demo` | **9 parametrized pytest tests** asserting `400/401/403/404/409/422/429/500/502` + `X-Request-ID` |
-| **5** | **Layered KPI Caching (Redis + MV)** | [`kpi_service.py`](./backend/app/services/kpi_service.py), [`kpi_repository.py`](./backend/app/repositories/kpi_repository.py), [`docs/CACHING_DECISION.md`](./docs/CACHING_DECISION.md) | `/dashboard`, `GET /api/v1/kpis`, `POST /api/v1/admin/kpis/refresh` | Raw SQL **`84.6 ms`** → Materialized View **`2.1 ms`** → Redis Cache-Aside **`0.4 ms`** (**211x faster**) |
-| **6** | **Keyset (Cursor) vs Offset Pagination** | [`lead_repository.py`](./backend/app/repositories/lead_repository.py), [`benchmark_pagination.py`](./backend/app/scripts/benchmark_pagination.py), [`docs/PAGINATION.md`](./docs/PAGINATION.md) | `/leads`, `/docs/pagination-benchmark`, `GET /api/v1/leads` | Page 4,000 (`OFFSET 199950`): Offset **`94.7 ms`** vs Keyset **`0.88 ms`** (**107.6x faster**) |
+| **5** | **Layered KPI Caching (Redis + MV)** | [`kpi_service.py`](./backend/app/services/kpi_service.py), [`kpi_repository.py`](./backend/app/repositories/kpi_repository.py), [`docs/CACHING_DECISION.md`](./docs/CACHING_DECISION.md) | `/dashboard`, `GET /api/v1/kpis`, `POST /api/v1/admin/kpis/refresh` | Raw SQL **`242.14 ms`** → Materialized View **`9.61 ms`** → Redis Cache-Aside **`3.55 ms`** (**68.2x faster**) |
+| **6** | **Keyset (Cursor) vs Offset Pagination** | [`lead_repository.py`](./backend/app/repositories/lead_repository.py), [`benchmark_pagination.py`](./backend/app/scripts/benchmark_pagination.py), [`docs/PAGINATION.md`](./docs/PAGINATION.md) | `/leads`, `/docs/pagination-benchmark`, `GET /api/v1/leads` | Depth 150k (`EXPLAIN ANALYZE`): Offset **`83.28 ms`** (3,016 buffers) vs Keyset **`0.33 ms`** (5 buffers, **252x faster**) |
 | **7** | **Reliable Structured JSON from LLMs** | [`schemas.py`](./backend/app/llm/schemas.py) (`ExtractedLead`), [`client.py`](./backend/app/llm/client.py) (`extract_lead_with_retries`) | `/smart-capture`, `POST /api/v1/ai/smart-capture` | Tool-use JSON schema + fence stripping + **2 validation feedback retries** |
 | **8** | **Controlling LLM Cost in Production** | [`router.py`](./backend/app/llm/router.py), [`ai_service.py`](./backend/app/services/ai_service.py), [`docs/LLM_COST_CONTROL.md`](./docs/LLM_COST_CONTROL.md) | `/ai-assistant`, `/admin/ai-costs`, `POST /api/v1/ai/chat/stream` | **75.9% cost reduction** via model routing, FAQ short-circuit, Redis cache, RAG-lite & budgets |
 | **9** | **Shipping Speed vs Code Quality** | [`docs/ROADMAP.md`](./docs/ROADMAP.md), [`docs/TECH_DEBT.md`](./docs/TECH_DEBT.md), [`docs/issues/`](./docs/issues/) | Feature flags in `.env.example` & `/ai-assistant` | 4 ticketed tech debt entries (`TD-001`..`TD-004`) with impact, effort & fix triggers |
-| **10** | **Maintainable Code for Teammates** | [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`docs/adr/`](./docs/adr/), [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | Swagger `/docs`, strict `mypy` + `tsc` | **0 `mypy` errors**, **0 `ruff` warnings**, **0 TS `any`**, 21 backend + frontend tests |
+| **10** | **Maintainable Code for Teammates** | [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`docs/adr/`](./docs/adr/), [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | Swagger `/docs`, strict `mypy` + `tsc` | **0 `mypy` errors** (46 files), **0 `ruff` warnings**, **0 TS `any`**, 25 backend + frontend tests |
 
 ---
 
@@ -111,22 +111,24 @@ npm run dev
 
 ## Benchmarks Summary
 
-Run both benchmarks anytime with `make benchmark`:
+> **Measured on**: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-10  
+> Raw outputs are stored in [`docs/benchmarks/`](./docs/benchmarks/) and reproducible via `python scripts/run_benchmarks.py`.
 
-### 1. Offset vs Keyset Pagination on 200,000 Leads (`python -m app.scripts.benchmark_pagination`)
-| Page | `OFFSET` Skipped | `GET /leads/offset` (ms) | `GET /leads` Keyset (ms) | Speedup |
-| ---: | ---: | ---: | ---: | ---: |
-| **1** | `0` | `0.84 ms` | `0.79 ms` | `1.06x` |
-| **100** | `4,950` | `3.92 ms` | `0.81 ms` | `4.84x` |
-| **1,000** | `49,950` | `26.40 ms` | `0.85 ms` | `31.06x` |
-| **4,000** | `199,950` | `94.70 ms` | **`0.88 ms`** | **`107.61x`** |
+### 1. Offset vs Keyset Pagination on 200,000 Leads (`docs/benchmarks/benchmark_pagination.txt`)
+| Depth (Rows Skipped) | End-to-End `OFFSET` (ms) | End-to-End Keyset (ms) | End-to-End Speedup | Postgres `EXPLAIN ANALYZE` (`OFFSET` vs Keyset) |
+| ---: | ---: | ---: | ---: | :--- |
+| **100** | `6.58 ms` | `7.35 ms` | `0.9x` | Both index-seek near top of tree |
+| **10,000** | `6.33 ms` | `5.42 ms` | `1.2x` | `OFFSET` walks 10,050 entries |
+| **50,000** | `11.01 ms` | `4.26 ms` | `2.6x` | `OFFSET` walks 50,050 entries |
+| **100,000** | `15.19 ms` | `3.68 ms` | `4.1x` | `OFFSET` walks 100,050 entries |
+| **150,000** | `18.28 ms` | **`3.42 ms`** | **`5.3x`** | **`83.28 ms` (3,016 buffers) vs `0.33 ms` (5 buffers) = `252x` faster in Postgres** |
 
-### 2. FastAPI Concurrency Lab — 50 Concurrent Requests (`python -m app.scripts.benchmark_async`)
-| Endpoint Strategy | Wall Time (50 reqs) | p50 Latency | p95 Latency | Throughput |
-| :--- | ---: | ---: | ---: | ---: |
-| `GET /api/v1/lab/io-async` (`asyncio.gather`) | **`56.45 ms`** | `54.2 ms` | `55.9 ms` | **`885.7 req/s`** |
-| `GET /api/v1/lab/io-blocking-right` (`run_in_threadpool`) | `105.78 ms` | `53.9 ms` | `104.9 ms` | `472.7 req/s` |
-| `GET /api/v1/lab/io-blocking-wrong` (`time.sleep` in `async def`) | `2,268.41 ms` | `1,135.4 ms` | `2,177.8 ms` | `22.0 req/s` |
+### 2. FastAPI Concurrency Lab — 50 Concurrent Requests (`docs/benchmarks/benchmark_async.txt`)
+| Endpoint Strategy | Wall Time (50 reqs) | p50 Latency | p95 Latency |
+| :--- | ---: | ---: | ---: |
+| `GET /api/v1/lab/io-async` (`asyncio.gather`) | **`193.7 ms`** | `144.5 ms` | `187.1 ms` |
+| `GET /api/v1/lab/io-blocking-right` (`run_in_threadpool`) | `186.1 ms` | `122.8 ms` | `143.6 ms` |
+| `GET /api/v1/lab/io-blocking-wrong` (`time.sleep` in `async def`) | `3,179.7 ms` | `3,149.7 ms` | `3,161.2 ms` |
 
 ---
 

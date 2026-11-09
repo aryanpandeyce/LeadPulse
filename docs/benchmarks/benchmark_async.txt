@@ -1,0 +1,11 @@
+Measured on: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-09
+===============================================================================================
+
+
+FastAPI Concurrency Benchmark (50 concurrent requests, delay_ms=50):
+--------------------------------------------------------------------------------------------
+Mode                                           | Total Wall (ms) | p50 (ms)   | p95 (ms)  
+--------------------------------------------------------------------------------------------
+1. io-async (asyncio.gather)                   | 193.7           | 144.5      | 187.1     
+2. io-blocking-wrong (time.sleep in async def) | 3179.7          | 3149.7     | 3161.2    
+3. io-blocking-right (run_in_threadpool)       | 186.1           | 122.8      | 143.6     

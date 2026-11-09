@@ -1,0 +1,8 @@
+Measured on: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-09
+===============================================================================================
+
+KPI Endpoint 3-Tier Latency Comparison (5-run mean on 200,000 leads):
+------------------------------------------------------------------------------
+1. Raw SQL GROUP BY scan (`GET /api/v1/kpis/raw`)                 : 242.14 ms
+2. PostgreSQL Materialized View (`GET /api/v1/kpis?bypass_redis=true`) : 9.61 ms
+3. Redis Cache Hit (`GET /api/v1/kpis`)                           : 3.55 ms

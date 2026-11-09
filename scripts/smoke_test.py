@@ -95,7 +95,7 @@ def run_smoke_tests(backend_url: str, frontend_url: str, agent_password: str) ->
     # 6. GET /api/v1/kpis
     _, kpis_body, _ = _http_json(f"{api_base}/kpis", headers=auth_headers)
     assert kpis_body.get("source") in ("redis", "materialized_view"), f"Unexpected KPI source: {kpis_body}"
-    print(f"  [PASS] 6/8 GET /api/v1/kpis -> source={kpis_body['source']} ({kpis_body.get('elapsed_ms')} ms)")
+    print(f"  [PASS] 6/8 GET /api/v1/kpis -> source={kpis_body['source']} ({kpis_body.get('query_ms')} ms)")
 
     # 7. 404 Unified Error Envelope
     _, err_body, err_headers = _http_json(

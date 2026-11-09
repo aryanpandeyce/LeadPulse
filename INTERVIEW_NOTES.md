@@ -361,3 +361,24 @@ If another engineer joins your team tomorrow, can they understand the architectu
 >
 > **Everything is strictly typed (`mypy` + TypeScript), wrapped in a unified error envelope with `X-Request-ID` correlation, documented with ADRs and a tech debt register, and verified in GitHub Actions CI."**
 
+---
+
+## Production Deployment Story (How to Explain the Live Cloud Architecture)
+
+> **Measured on**: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-10 (raw outputs in [`docs/benchmarks/`](./docs/benchmarks/)).
+
+### 1. Why This 4-Service Free-Tier Topology?
+- **Frontend (`Vercel`)**: Next.js 14 App Router deployed directly from the `frontend/` subdirectory with edge CDN caching and native `/_next/image` AVIF/WebP optimization.
+- **Backend API (`Render Docker Web Service` via `render.yaml`)**: Runs our `python:3.11-slim` container (`backend/Dockerfile`), executing `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}` on startup and verified by `/api/v1/health`.
+- **Database (`Neon Serverless PostgreSQL 16`)**: Supports `pg_trgm` GIN indexes, composite keyset indexes, and `REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_kpis`. We configure **pooled** `DATABASE_URL` (`-pooler` PgBouncer endpoint) for runtime `asyncpg` queries and **unpooled** `DIRECT_DATABASE_URL` in `backend/alembic/env.py` for transactional DDL migrations.
+- **Cache & Rate Limiting (`Upstash Serverless Redis`)**: Connected over TLS (`rediss://`) for KPI Cache-Aside (`kpis:monthly:v{N}`), LLM prompt caching, and sliding-window 429 rate limiting.
+
+### 2. Free-Tier Constraints & How We Engineered Around Them
+1. **Render 15-Minute Cold Start Spin-Down**: Free-tier Render web services sleep after 15 minutes of inactivity and take ~25–35 seconds to wake up. In [`frontend/src/lib/api-client.ts`](./frontend/src/lib/api-client.ts) and [`Navbar.tsx`](./frontend/src/components/navbar.tsx), we added a cold-start detector (`subscribeColdStart`) that automatically displays `"Waking up the server (free tier cold start, ~30s)..."` whenever an initial request takes >3.5s.
+2. **Neon 0.5 GB Storage Limit**: While local Docker runs the full 200,000-lead + 500,000-activity dataset, our seed script (`python -m app.scripts.seed --seed-size small`) supports a cloud preset (10,000 customers, 30,000 leads, 60,000 activities, ~85 MB) that stays comfortably under Neon's 512 MB limit while still exercising keyset pagination and `pg_trgm` GIN indexes.
+3. **512 MB RAM Container Limit on Render**: We cap `PROCESS_POOL_MAX_WORKERS=1` and `DB_POOL_SIZE=5` in `render.yaml` so worker processes never exceed container memory limits.
+4. **What We Would Change with a $50/Month Production Budget**:
+   - Keep at least 2 always-on Render/ECS tasks ($14/mo) behind an ALB so cold starts are 0ms.
+   - Move `ProcessPoolExecutor` report jobs (`TD-001`) to a dedicated ARQ/Celery Redis worker container ($7/mo).
+   - Upgrade Neon to Launch/Scale tier ($19/mo) for 10 GB storage (1M+ leads) and dedicated compute.
+

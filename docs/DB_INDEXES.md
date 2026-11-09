@@ -20,48 +20,53 @@ All indexes are created declaratively via Alembic (`backend/alembic/versions/000
 
 ---
 
-## 2. `EXPLAIN ANALYZE` Before & After Index Creation
+## 2. `EXPLAIN (ANALYZE, BUFFERS)` Before & After Index Creation
 
-### Query A: Filtered + Sorted + Substring Search on 10,000 Customers (`/customers`)
+> **Measured on**: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-10  
+> Raw outputs saved in [`docs/benchmarks/explain_analyze_customers_trgm.txt`](benchmarks/explain_analyze_customers_trgm.txt) and [`docs/benchmarks/explain_analyze_leads_keyset.txt`](benchmarks/explain_analyze_leads_keyset.txt).
+
+### Query A: Substring Search + Sort on 10,000 Customers (`/customers`)
 ```sql
-EXPLAIN ANALYZE
-SELECT id, name, email, phone, city, status, total_purchase_amount, created_at
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, name, email, city, status, total_purchase_amount
 FROM customers
-WHERE city = 'Ahmedabad'
-  AND status = 'active'
-  AND (name ILIKE '%aryan%' OR email ILIKE '%aryan%')
-ORDER BY total_purchase_amount DESC, id DESC
-LIMIT 50 OFFSET 0;
+WHERE (name || ' ' || email) ILIKE '%aryan%'
+ORDER BY total_purchase_amount DESC LIMIT 25;
 ```
 
-#### BEFORE Indexes (Sequential Scan + In-Memory Sort)
+#### BEFORE Index (Sequential Scan — `enable_indexscan=off, enable_bitmapscan=off`)
 ```text
-Limit  (cost=412.50..412.63 rows=12 width=148) (actual time=18.420..18.426 ms rows=5 loops=1)
-  ->  Sort  (cost=412.50..412.53 rows=12 width=148) (actual time=18.418..18.421 ms rows=5 loops=1)
-        Sort Key: total_purchase_amount DESC, id DESC
+Limit  (cost=460.01..460.01 rows=1 width=70) (actual time=8.606..8.608 rows=5 loops=1)
+  Buffers: shared hit=285
+  ->  Sort  (cost=460.01..460.01 rows=1 width=70) (actual time=8.605..8.606 rows=5 loops=1)
+        Sort Key: total_purchase_amount DESC
         Sort Method: quicksort  Memory: 25kB
-        ->  Seq Scan on customers  (cost=0.00..412.28 rows=12 width=148) (actual time=0.041..18.360 ms rows=5 loops=1)
-              Filter: (((city)::text = 'Ahmedabad'::text) AND ((status)::text = 'active'::text) AND (((name)::text ~~* '%aryan%'::text) OR ((email)::text ~~* '%aryan%'::text)))
+        Buffers: shared hit=285
+        ->  Seq Scan on customers  (cost=0.00..460.00 rows=1 width=70) (actual time=0.026..8.511 rows=5 loops=1)
+              Filter: ((((name)::text || ' '::text) || (email)::text) ~~* '%aryan%'::text)
               Rows Removed by Filter: 9995
-Planning Time: 0.310 ms
-Execution Time: 18.490 ms
+              Buffers: shared hit=285
+Planning Time: 8.551 ms
+Execution Time: 8.663 ms
 ```
 
-#### AFTER Indexes (Bitmap Index Scan using `pg_trgm` GIN + Composite B-Tree)
+#### AFTER Index (Bitmap Index Scan using `ix_customers_name_email_trgm` GIN)
 ```text
-Limit  (cost=24.18..24.21 rows=5 width=148) (actual time=0.612..0.615 ms rows=5 loops=1)
-  ->  Sort  (cost=24.18..24.21 rows=5 width=148) (actual time=0.610..0.612 ms rows=5 loops=1)
-        Sort Key: total_purchase_amount DESC, id DESC
+Limit  (cost=34.22..34.23 rows=1 width=70) (actual time=0.536..0.537 rows=5 loops=1)
+  Buffers: shared hit=8
+  ->  Sort  (cost=34.22..34.23 rows=1 width=70) (actual time=0.535..0.535 rows=5 loops=1)
+        Sort Key: total_purchase_amount DESC
         Sort Method: quicksort  Memory: 25kB
-        ->  Bitmap Heap Scan on customers  (cost=16.05..24.12 rows=5 width=148) (actual time=0.580..0.598 ms rows=5 loops=1)
-              Recheck Cond: ((((name)::text || ' '::text) || (email)::text) ~~* '%aryan%'::text AND ((status)::text = 'active'::text) AND ((city)::text = 'Ahmedabad'::text))
-              Heap Blocks: exact=5
-              ->  BitmapAnd  (cost=16.05..16.05 rows=5 width=0) (actual time=0.562..0.563 ms rows=0 loops=1)
-                    ->  Bitmap Index Scan on ix_customers_name_email_trgm  (cost=0.00..8.25 rows=45 width=0) (actual time=0.310..0.310 ms rows=5 loops=1)
-                    ->  Bitmap Index Scan on ix_customers_status_city_amount  (cost=0.00..7.55 rows=600 width=0) (actual time=0.240..0.240 ms rows=600 loops=1)
-                          Index Cond: (((status)::text = 'active'::text) AND ((city)::text = 'Ahmedabad'::text))
-Planning Time: 0.285 ms
-Execution Time: 0.654 ms  (28x faster)
+        Buffers: shared hit=8
+        ->  Bitmap Heap Scan on customers  (cost=30.19..34.21 rows=1 width=70) (actual time=0.523..0.528 rows=5 loops=1)
+              Recheck Cond: ((((name)::text || ' '::text) || (email)::text) ~~* '%aryan%'::text)
+              Heap Blocks: exact=1
+              Buffers: shared hit=8
+              ->  Bitmap Index Scan on ix_customers_name_email_trgm  (cost=0.00..30.19 rows=1 width=0) (actual time=0.487..0.487 rows=5 loops=1)
+                    Index Cond: ((((name)::text || ' '::text) || (email)::text) ~~* '%aryan%'::text)
+                    Buffers: shared hit=7
+Planning Time: 0.383 ms
+Execution Time: 1.010 ms  (8.6x faster execution, 35.6x fewer shared buffer hits: 285 -> 8)
 ```
 
 ---
@@ -70,18 +75,22 @@ Execution Time: 0.654 ms  (28x faster)
 
 #### Deep OFFSET (`OFFSET 150000 LIMIT 50`)
 ```text
-Limit  (cost=6420.10..6422.24 rows=50 width=132) (actual time=68.412..68.445 ms rows=50 loops=1)
-  ->  Index Scan using ix_leads_created_at_id_desc on leads  (cost=0.42..8560.15 rows=200000 width=132) (actual time=0.035..61.880 ms rows=150050 loops=1)
-Planning Time: 0.140 ms
-Execution Time: 68.510 ms
+Limit  (cost=10235.48..10238.89 rows=50 width=90) (actual time=83.187..83.261 rows=50 loops=1)
+  Buffers: shared hit=3016
+  ->  Index Scan using ix_leads_created_at_id_desc on leads  (cost=0.42..13647.17 rows=200000 width=90) (actual time=0.263..78.583 rows=150050 loops=1)
+        Buffers: shared hit=3016
+Planning Time: 0.315 ms
+Execution Time: 83.279 ms
 ```
 
 #### Keyset Cursor (`WHERE (created_at, id) < (:cursor_ts, :cursor_id) LIMIT 50`)
 ```text
-Limit  (cost=0.42..2.85 rows=50 width=132) (actual time=0.048..0.092 ms rows=50 loops=1)
-  ->  Index Scan using ix_leads_created_at_id_desc on leads  (cost=0.42..2410.10 rows=50000 width=132) (actual time=0.046..0.081 ms rows=50 loops=1)
-        Index Cond: (ROW(created_at, id) < ROW('2026-07-28 14:20:00+00'::timestamptz, 50000))
-Planning Time: 0.155 ms
-Execution Time: 0.118 ms  (580x faster at depth 150,000)
+Limit  (cost=0.42..8.24 rows=50 width=90) (actual time=0.239..0.281 rows=50 loops=1)
+  Buffers: shared hit=5
+  ->  Index Scan using ix_leads_created_at_id_desc on leads  (cost=0.42..7817.93 rows=49979 width=90) (actual time=0.237..0.275 rows=50 loops=1)
+        Index Cond: (ROW(created_at, id) < ROW('2026-07-28 19:19:02.6365+00'::timestamp with time zone, 150605))
+        Buffers: shared hit=5
+Planning Time: 0.336 ms
+Execution Time: 0.330 ms  (252x faster execution at depth 150,000; 603x fewer buffers read: 3,016 -> 5)
 ```
 

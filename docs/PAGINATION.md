@@ -33,12 +33,17 @@ With Keyset pagination, PostgreSQL traverses the B-tree directly to `(created_at
 
 ### Benchmark Results on 200,000 Leads (`limit = 50`)
 
-| Page Number | Rows Skipped (`OFFSET`) | `GET /leads/offset` (ms) | `GET /leads` Keyset (ms) | Speedup Factor |
-| ---: | ---: | ---: | ---: | ---: |
-| **Page 1** | `0` | `0.84 ms` | `0.79 ms` | `1.06x` |
-| **Page 100** | `4,950` | `3.92 ms` | `0.81 ms` | `4.84x` |
-| **Page 1,000** | `49,950` | `26.40 ms` | `0.85 ms` | `31.06x` |
-| **Page 4,000** | `199,950` | `94.70 ms` | `0.88 ms` | **`107.61x`** |
+> **Measured on**: Windows 10 (AMD64) / PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) / 10,000 customers, 200,000 leads, 500,000 activities / 2026-11-10  
+> Raw outputs saved in [`docs/benchmarks/benchmark_pagination.txt`](benchmarks/benchmark_pagination.txt) and [`docs/benchmarks/explain_analyze_leads_keyset.txt`](benchmarks/explain_analyze_leads_keyset.txt).
+
+| Depth (Rows Skipped) | End-to-End `OFFSET` (ms) | End-to-End Keyset (ms) | End-to-End Speedup | Postgres `EXPLAIN ANALYZE` (`OFFSET` vs Keyset) |
+| ---: | ---: | ---: | ---: | :--- |
+| **100** | `6.58 ms` | `7.35 ms` | `0.9x` | Both index-seek near top of tree |
+| **1,000** | `5.00 ms` | `5.71 ms` | `0.9x` | Shallow scan |
+| **10,000** | `6.33 ms` | `5.42 ms` | `1.2x` | `OFFSET` walks 10,050 entries |
+| **50,000** | `11.01 ms` | `4.26 ms` | `2.6x` | `OFFSET` walks 50,050 entries |
+| **100,000** | `15.19 ms` | `3.68 ms` | `4.1x` | `OFFSET` walks 100,050 entries |
+| **150,000** | `18.28 ms` | `3.42 ms` | **`5.3x`** | **`83.28 ms` (3,016 buffers) vs `0.33 ms` (5 buffers) = `252x` faster in Postgres** |
 
 ---
 
